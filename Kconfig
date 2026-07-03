@@ -1,0 +1,27 @@
+# ============================================================================
+#  BLE bond / profile dump behavior
+# ============================================================================
+config ZMK_BEHAVIOR_BLE_DUMP
+    bool
+    default y
+    depends on DT_HAS_ZMK_BEHAVIOR_BLE_DUMP_ENABLED
+
+# ============================================================================
+#  Periodic host-link RSSI logger
+# ============================================================================
+config ZMK_BLE_RSSI
+    bool "Periodically log the RSSI of host BLE connections"
+    default n
+    depends on ZMK_BLE
+    select BT_CTLR_CONN_RSSI
+    help
+      Every ZMK_BLE_RSSI_INTERVAL_SEC seconds, read the connection RSSI (HCI Read
+      RSSI) of each BLE link where this device is the peripheral -- i.e. a host
+      such as a PC / phone, not the split other-half -- and log it. Useful for
+      diagnosing weak-signal / interference disconnects. Off by default; enable it
+      while debugging.
+
+config ZMK_BLE_RSSI_INTERVAL_SEC
+    int "BLE RSSI log interval (seconds)"
+    depends on ZMK_BLE_RSSI
+    default 5

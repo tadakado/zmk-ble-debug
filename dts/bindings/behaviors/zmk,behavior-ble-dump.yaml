@@ -1,0 +1,3 @@
+description: Log the BLE profile / bond list to the console.
+compatible: "zmk,behavior-ble-dump"
+include: zero_param.yaml
