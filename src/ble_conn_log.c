@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(ble_conn, CONFIG_ZMK_LOG_LEVEL);
 // not depend on the exact BT_HCI_ERR_* macro names of a Zephyr version.
 static const char *reason_str(uint8_t reason) {
     switch (reason) {
+    case 0x02: return "unknown conn id (create timed out / cancelled)";
     case 0x05: return "auth failure";
     case 0x06: return "key missing";
     case 0x08: return "supervision timeout";
@@ -64,8 +65,10 @@ static void on_connected(struct bt_conn *conn, uint8_t err) {
         LOG_INF("%s %s connect failed: 0x%02x (%s)", kind, addr, err, reason_str(err));
         return;
     }
-    LOG_INF("%s %s connected (interval %u x1.25ms, latency %u, timeout %u x10ms)", kind,
-            addr, info.le.interval, info.le.latency, info.le.timeout);
+    char local[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(info.le.src, local, sizeof(local));
+    LOG_INF("%s %s connected (interval %u x1.25ms, latency %u, timeout %u x10ms) local %s",
+            kind, addr, info.le.interval, info.le.latency, info.le.timeout, local);
 }
 
 static void on_disconnected(struct bt_conn *conn, uint8_t reason) {
