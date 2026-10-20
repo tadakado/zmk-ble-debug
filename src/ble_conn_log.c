@@ -26,7 +26,12 @@ static const char *reason_str(uint8_t reason) {
     case 0x15: return "remote power off";
     case 0x16: return "local host terminated";
     case 0x1f: return "unspecified";
+    case 0x1a: return "unsupported remote feature";
+    case 0x1e: return "invalid LL parameters";
+    case 0x20: return "unsupported LL parameter value";
     case 0x22: return "LL response timeout";
+    case 0x23: return "LL procedure collision";
+    case 0x24: return "LL PDU not allowed";
     case 0x28: return "instant passed";
     case 0x2a: return "transaction collision";
     case 0x3b: return "unacceptable conn params";
