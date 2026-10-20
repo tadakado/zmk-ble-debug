@@ -1,6 +1,6 @@
 # zmk-ble-debug
 
-Two small BLE debugging helpers for [ZMK](https://zmk.dev), on the central /
+Three small BLE debugging helpers for [ZMK](https://zmk.dev), on the central /
 non-split side:
 
 - **BLE profile dump** — a keymap behavior (`&ble_dump`) that logs the BLE
@@ -8,6 +8,8 @@ non-split side:
 - **Host-link RSSI logger** — an opt-in background thread that logs the RSSI of
   the host BLE connection every few seconds (useful for diagnosing weak-signal /
   interference disconnects).
+- **Connection event logger** — logs connect / disconnect (with the HCI reason)
+  / connection-parameter updates at INF level; on by default.
 
 Both are debug tools; enable what you need and read the output on the ZMK USB
 logging console.
@@ -84,6 +86,23 @@ peripheral (a host such as a PC/phone — not the split other half) and logs it:
 Roughly: > -60 excellent, -60..-75 good, -75..-85 marginal, below -85 weak.
 `select`s `BT_CTLR_CONN_RSSI` automatically.
 
+## Connection event logger
+
+On by default (central / non-split only). ZMK logs disconnect reasons only at
+DBG, so a host drop otherwise appears just as `Endpoint changed: USB`. Output:
+
+```
+<inf> ble_conn: host AA:BB:CC:DD:EE:FF (public) disconnected: 0x08 (supervision timeout)
+<inf> ble_conn: host AA:BB:CC:DD:EE:FF (public) connected (interval 12 x1.25ms, latency 0, timeout 400 x10ms)
+<inf> ble_conn: link 11:22:33:44:55:66 (random) params: interval 6 x1.25ms, latency 0, timeout 400 x10ms
+```
+
+`host` is a PC/phone (we are the peripheral); `link` is a device we connected to
+as central (the split peripheral half, a BLE mouse, ...). Typical reasons:
+`0x08` supervision timeout / `0x22` LL response timeout (radio: range,
+interference), `0x13` remote user terminated / `0x15` remote power off (the
+host closed the link, e.g. sleep), `0x16` local host terminated (this side).
+
 ## Configuration
 
 | Kconfig | Default | Description |
@@ -91,6 +110,7 @@ Roughly: > -60 excellent, -60..-75 good, -75..-85 marginal, below -85 weak.
 | `CONFIG_ZMK_BEHAVIOR_BLE_DUMP` | `y` when the node exists | The `&ble_dump` behavior. |
 | `CONFIG_ZMK_BLE_RSSI` | `n` | Enable the periodic host-link RSSI logger. |
 | `CONFIG_ZMK_BLE_RSSI_INTERVAL_SEC` | `5` | RSSI log interval (seconds). |
+| `CONFIG_ZMK_BLE_CONN_LOG` | `y` (central / non-split) | Log connection events with the disconnect reason. |
 
 ## License
 

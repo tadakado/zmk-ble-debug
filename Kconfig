@@ -25,3 +25,19 @@ config ZMK_BLE_RSSI_INTERVAL_SEC
     int "BLE RSSI log interval (seconds)"
     depends on ZMK_BLE_RSSI
     default 5
+
+# ============================================================================
+#  Connection event logger
+# ============================================================================
+config ZMK_BLE_CONN_LOG
+    bool "Log BLE connect / disconnect (with HCI reason) / param updates at INF"
+    default y
+    depends on ZMK_BLE
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+    help
+      ZMK logs the disconnect reason only at DBG level. This logs connection
+      events of every LE link (host links and, on a split central, the
+      peripheral half / other links it opened) at INF, including the HCI
+      disconnect reason, e.g. 0x08 supervision timeout (radio) vs 0x13 remote
+      user terminated (the other side hung up). Only fires on events, so it is
+      cheap enough to leave on.
