@@ -41,12 +41,3 @@ config ZMK_BLE_CONN_LOG
       disconnect reason, e.g. 0x08 supervision timeout (radio) vs 0x13 remote
       user terminated (the other side hung up). Only fires on events, so it is
       cheap enough to leave on.
-
-config ZMK_BLE_CONN_LOG_FAIL_INTERVAL_SEC
-    int "Repeat a recurring connect failure at most once per this many seconds"
-    depends on ZMK_BLE_CONN_LOG
-    default 600
-    help
-      A central link that keeps failing to connect (e.g. a sleeping BLE mouse
-      being retried every 3 s) logs the first failure, then at most one line
-      per this interval with the number of suppressed repeats. 0 logs all.

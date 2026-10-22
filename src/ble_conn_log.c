@@ -54,34 +54,6 @@ static bool describe(struct bt_conn *conn, char *addr, size_t len, const char **
     return true;
 }
 
-/* Throttle a recurring connect failure (same peer, same error). */
-static bt_addr_le_t fail_addr;
-static uint8_t fail_err;
-static bool fail_active;
-static uint32_t fail_suppressed;
-static int64_t fail_logged_ms;
-
-/* Returns true if this failure should be logged; *suppressed gets the number of
- * identical failures swallowed since the previous log line. */
-static bool fail_log_due(const bt_addr_le_t *dst, uint8_t err, uint32_t *suppressed) {
-    const int64_t interval_ms = (int64_t)CONFIG_ZMK_BLE_CONN_LOG_FAIL_INTERVAL_SEC * 1000;
-    const int64_t now = k_uptime_get();
-
-    if (fail_active && err == fail_err && bt_addr_le_eq(dst, &fail_addr) &&
-        interval_ms != 0 && now - fail_logged_ms < interval_ms) {
-        fail_suppressed++;
-        return false;
-    }
-    *suppressed = (fail_active && err == fail_err && bt_addr_le_eq(dst, &fail_addr))
-                      ? fail_suppressed : 0;
-    bt_addr_le_copy(&fail_addr, dst);
-    fail_err = err;
-    fail_active = true;
-    fail_suppressed = 0;
-    fail_logged_ms = now;
-    return true;
-}
-
 static void on_connected(struct bt_conn *conn, uint8_t err) {
     char addr[BT_ADDR_LE_STR_LEN];
     const char *kind;
@@ -90,20 +62,8 @@ static void on_connected(struct bt_conn *conn, uint8_t err) {
         return;
     }
     if (err) {
-        uint32_t suppressed;
-        if (!fail_log_due(info.le.dst, err, &suppressed)) {
-            return;
-        }
-        if (suppressed) {
-            LOG_INF("%s %s connect failed: 0x%02x (%s), +%u identical since last log", kind,
-                    addr, err, reason_str(err), suppressed);
-        } else {
-            LOG_INF("%s %s connect failed: 0x%02x (%s)", kind, addr, err, reason_str(err));
-        }
+        LOG_INF("%s %s connect failed: 0x%02x (%s)", kind, addr, err, reason_str(err));
         return;
-    }
-    if (fail_active && bt_addr_le_eq(info.le.dst, &fail_addr)) {
-        fail_active = false; /* the failing peer is back: next failure logs at once */
     }
     char local[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(info.le.src, local, sizeof(local));
