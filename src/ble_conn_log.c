@@ -62,6 +62,12 @@ static void on_connected(struct bt_conn *conn, uint8_t err) {
         return;
     }
     if (err) {
+        // A link we initiate that times out (or is cancelled) reports 0x02. A module
+        // that keeps retrying an absent device (e.g. a sleeping BLE mouse) would log
+        // this every few seconds; that module summarises its own failures instead.
+        if (info.role == BT_CONN_ROLE_CENTRAL && err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+            return;
+        }
         LOG_INF("%s %s connect failed: 0x%02x (%s)", kind, addr, err, reason_str(err));
         return;
     }
