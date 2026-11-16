@@ -18,7 +18,11 @@
 
 #if DUMP_ENABLED
 #include <zmk/ble.h>
+#include <zmk/endpoints.h>
 #include <zephyr/bluetooth/addr.h>
+#if IS_ENABLED(CONFIG_ZMK_USB)
+#include <zmk/usb.h>
+#endif
 #endif
 
 LOG_MODULE_REGISTER(ble_dump, CONFIG_ZMK_LOG_LEVEL);
@@ -42,11 +46,49 @@ static void ble_dump_profiles(void) {
 #endif
 }
 
+#if DUMP_ENABLED
+static const char *transport_str(enum zmk_transport t) {
+    switch (t) {
+    case ZMK_TRANSPORT_USB:
+        return "USB";
+    case ZMK_TRANSPORT_BLE:
+        return "BLE";
+    default:
+        return "none";
+    }
+}
+#endif
+
+// Where keystrokes go right now. "selected" is the endpoint reports are sent to:
+// the preferred transport if it is ready, otherwise the other one as a fallback.
+static void dump_endpoint(void) {
+#if DUMP_ENABLED
+    char sel[ZMK_ENDPOINT_STR_LEN];
+    struct zmk_endpoint_instance selected = zmk_endpoint_get_selected();
+
+    if (selected.transport == ZMK_TRANSPORT_NONE) {
+        snprintf(sel, sizeof(sel), "none");
+    } else {
+        zmk_endpoint_instance_to_str(selected, sel, sizeof(sel));
+    }
+    LOG_INF("=== Output: sending to %s (preferred %s) ===", sel,
+            transport_str(zmk_endpoint_get_preferred_transport()));
+#if IS_ENABLED(CONFIG_ZMK_USB)
+    LOG_INF("  USB: %s", zmk_usb_is_hid_ready() ? "HID ready"
+                         : zmk_usb_is_powered() ? "powered, not ready"
+                                                : "not connected");
+#endif
+    LOG_INF("  BLE: active profile %d %s", zmk_ble_active_profile_index(),
+            zmk_ble_active_profile_is_connected() ? "connected" : "not connected");
+#endif
+}
+
 static int on_pressed(struct zmk_behavior_binding *binding,
                       struct zmk_behavior_binding_event event) {
     ARG_UNUSED(binding);
     ARG_UNUSED(event);
     ble_dump_profiles();
+    dump_endpoint();
     return ZMK_BEHAVIOR_OPAQUE;
 }
 
